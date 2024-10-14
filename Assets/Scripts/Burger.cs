@@ -30,7 +30,6 @@ public class Burger : MonoBehaviour
     private void Update()
     {
         transform.position = Vector3.Lerp(StartPos, EndPos, curve.Evaluate(Mathf.PingPong(Time.time, 1)));
-
         transform.Rotate(Vector3.up * 90 * Time.deltaTime);
     }
 }

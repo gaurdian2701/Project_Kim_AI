@@ -8,19 +8,48 @@ public class Kim : CharacterController
 {
     [SerializeField] float ContextRadius;
     private Grid gridManager;
+    private Random random;
 
     public override void StartCharacter()
     {
         base.StartCharacter();
-        gridManager = Grid.Instance;
         
-        Random random = new Random();
+        gridManager = Grid.Instance;
+        random = new Random();
         int endingPos = random.Next(2, 10);
-
-        for (int i = 1; i < endingPos; i++)
+        myCurrentTile = gridManager.GetClosest(transform.position);
+        List<Grid.Tile> tilesGenerated = new List<Grid.Tile>();
+        Vector2Int tileCalculatedForNextStep = new Vector2Int(myCurrentTile.x, myCurrentTile.y);
+        for (int i = 1; i < 1000; i++)
         {
-            Grid.Tile nextTile = gridManager.TryGetTile(new Vector2Int(myCurrentTile.x + i, myCurrentTile.y));
-            myWalkBuffer.Add(nextTile);
+            Vector2Int nextRandomDirection = GenerateRandomDirection();
+            Vector2Int temporaryTileCalculatedForNextStep = tileCalculatedForNextStep;
+            temporaryTileCalculatedForNextStep.x += nextRandomDirection.x;
+            temporaryTileCalculatedForNextStep.y += nextRandomDirection.y;
+            Grid.Tile nextTile = gridManager.TryGetTile(tileCalculatedForNextStep);
+            if (nextTile != null)
+            {
+                tilesGenerated.Add(nextTile);
+                tileCalculatedForNextStep = temporaryTileCalculatedForNextStep;
+            }
+        }
+        SetWalkBuffer(tilesGenerated);
+    }
+
+    private Vector2Int GenerateRandomDirection()
+    {
+        int direction = random.Next(0, 4);
+        switch (direction)
+        {
+            default:
+            case 0:
+                return new Vector2Int(0, 1);
+            case 1:
+                return new Vector2Int(1, 0);
+            case 2:
+                return new Vector2Int(0, -1);
+            case 3:
+                return new Vector2Int(-1, 0);
         }
     }
 
