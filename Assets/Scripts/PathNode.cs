@@ -1,10 +1,12 @@
 using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 [Serializable]
-public class TileCost
+public class PathNode
 {
-    public Grid.Tile Tile;
+    public Grid.Tile CurrentTile;
+    public Grid.Tile ParentTile;
     public float CostToMoveToTile;
     public float HeuristicCost;
 
