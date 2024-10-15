@@ -10755,6 +10755,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3846718407826640484, guid: e74821599e1428f4fb096b33ee329de8,
         type: 3}
+      propertyPath: waitTime
+      value: 1.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3846718407826640484, guid: e74821599e1428f4fb096b33ee329de8,
+        type: 3}
       propertyPath: FleeRadius
       value: 3
       objectReference: {fileID: 0}
@@ -17515,6 +17520,11 @@ PrefabInstance:
       propertyPath: myKim
       value: 
       objectReference: {fileID: 601951312}
+    - target: {fileID: 1034124237691063017, guid: 078ac4cfd02656d4eafd0ef44e98033a,
+        type: 3}
+      propertyPath: SkipIntro
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 4601961738845201628, guid: 078ac4cfd02656d4eafd0ef44e98033a,
         type: 3}
       propertyPath: m_LocalPosition.x

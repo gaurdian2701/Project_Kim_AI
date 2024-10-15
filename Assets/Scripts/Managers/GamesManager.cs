@@ -30,10 +30,12 @@ public class GamesManager : StateMachine
     int CollectedBurgers;
 
     [SerializeField] bool SkipIntro = false;
+    [SerializeField] private float currentTimeStep;
 
     private void Awake()
     {
         Instance = this;
+        currentTimeStep = 1f;
     }
 
     private void Start()
@@ -53,6 +55,7 @@ public class GamesManager : StateMachine
     private void Update()
     {
         UpdateStateMachine();
+        Time.timeScale = currentTimeStep;
     }
 
     public Vector3 GetKimPos()

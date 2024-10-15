@@ -41,7 +41,6 @@ public class CharacterController : MonoBehaviour
         if (myWalkBuffer.Count > 0)
         {
             Grid.Tile t = myWalkBuffer.ElementAt(0);
-            Debug.Log(myWalkBuffer.ElementAt(0) + ", " + myWalkBuffer.Count);
             if (!t.occupied) MoveTile(myWalkBuffer.ElementAt(0));
 
             myAnimator.SetBool("Walk", true);
