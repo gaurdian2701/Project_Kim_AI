@@ -101,7 +101,6 @@ public class Grid : MonoBehaviour
         }
 
         GetClosest(FinishTileTrans.position).finishTile = true;
-
         GeneratedGrid = true;
     }
 

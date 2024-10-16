@@ -13,17 +13,11 @@ public class Kim : CharacterController
     [SerializeField] float waitTime;
 
     private Grid gridManager;
-    private Random random;
-    private float currentWaitStep;
-    
-    private int frameUpdate = 0;
 
     public override void StartCharacter()
     {
         base.StartCharacter();
         gridManager = Grid.Instance;
-        random = new Random();
-        currentWaitStep = waitTime;
         myCurrentTile = gridManager.GetClosest(transform.position);
     }
 
@@ -33,30 +27,25 @@ public class Kim : CharacterController
         Zombie closest = GetClosest(GetContextByTag("Zombie"))?.GetComponent<Zombie>();
         
         FindPathToTarget();
-        frameUpdate++;
     }
 
     private void FindPathToTarget()
     {
         List<PathNode> openSet = new List<PathNode>();
-        HashSet<PathNode> closedSet = new HashSet<PathNode>();
+        List<PathNode> closedSet = new List<PathNode>();
 
         PathNode startNode = new PathNode();
         PathNode targetNode = new PathNode();
 
         startNode.CurrentTile = gridManager.GetClosest(transform.position);
+        targetNode.CurrentTile = gridManager.GetFinishTile();
         startNode.CostToMoveToTile = 0;
         startNode.HeuristicCost = MathF.Round(Vector2.Distance(gridManager.WorldPos(myCurrentTile),
-            gridManager.WorldPos(gridManager.GetFinishTile())), 2);
+            gridManager.WorldPos(targetNode.CurrentTile)), 2);
         openSet.Add(startNode);
-        
-        Debug.Log(openSet[0]);
-
-        targetNode.CurrentTile = gridManager.GetFinishTile();
-        int listUpdate = 0;
-        while (openSet.Count < 2000 && listUpdate < 60)
+            
+        while (openSet.Count > 0)
         {
-            listUpdate++;
             PathNode currentNode = openSet[0];
             for (int i = 1; i < openSet.Count; i++)
             {
@@ -66,11 +55,13 @@ public class Kim : CharacterController
             }
             
             openSet.Remove(currentNode);
-            closedSet.Add(currentNode);
+            
+            if(closedSet.Find(x => x.CurrentTile == currentNode.CurrentTile) == null)
+                closedSet.Add(currentNode);
 
             if (gridManager.IsSameTile(currentNode.CurrentTile, targetNode.CurrentTile))
             {
-                SetWalkBuffer(GetRetracedPathToTargetNode(startNode, targetNode));
+                SetWalkBuffer(GetRetracedPathToTargetNode(startNode, currentNode));
                 return;
             }
 
@@ -78,39 +69,39 @@ public class Kim : CharacterController
             
             for (int i = 0; i < neighbours.Count; i++)
             {
-                if (closedSet.Contains(neighbours[i]) || neighbours[i].CurrentTile.occupied)
-                {
-                    Debug.Log("Contains for closed set working");
+                if (closedSet.Find(x => x.CurrentTile == neighbours[i].CurrentTile) != null || neighbours[i].CurrentTile.occupied)
                     continue;
-                }
                 
-                float newMovementCostToNode = MathF.Round(currentNode.CostToMoveToTile + Vector2.Distance(gridManager.WorldPos(currentNode.CurrentTile), 
-                    gridManager.WorldPos(neighbours[i].CurrentTile)), 2);
-                if (newMovementCostToNode < neighbours[i].CostToMoveToTile || !openSet.Contains(neighbours[i]))
+                float newMovementCostToNode = GetDistanceBetweenNodes(currentNode, neighbours[i]);
+                
+                if (newMovementCostToNode < neighbours[i].CostToMoveToTile || openSet.Find(x => x.CurrentTile == neighbours[i].CurrentTile) == null)
                 {
                     neighbours[i].CostToMoveToTile = newMovementCostToNode;
-                    neighbours[i].HeuristicCost = MathF.Round(Vector2.Distance(gridManager.WorldPos(targetNode.CurrentTile),
-                        gridManager.WorldPos(neighbours[i].CurrentTile)), 2);
+                    neighbours[i].HeuristicCost = GetDistanceBetweenNodes(targetNode, neighbours[i]);
                     neighbours[i].ParentNode = currentNode;
-
-                    if (!openSet.Contains(neighbours[i]))
-                    {
+                    
+                    if (openSet.Find(x => x.CurrentTile == neighbours[i].CurrentTile) == null)
                         openSet.Add(neighbours[i]);
-                        GameObject c = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                        c.transform.position = gridManager.WorldPos(neighbours[i].CurrentTile);
-                        c.transform.localScale = new Vector3(0.2f, 0.2f, 0.2f);
-                        Debug.Log(gridManager.WorldPos(neighbours[i].CurrentTile).magnitude + " " + frameUpdate);
-                    }
                 }
             }
         }
     }
 
-    private List<Grid.Tile> GetRetracedPathToTargetNode(PathNode startNode, PathNode targetNode)
+    private int GetDistanceBetweenNodes(PathNode node1, PathNode node2)
+    {
+        int distanceX = Mathf.Abs(node1.CurrentTile.x - node2.CurrentTile.x);
+        int distanceY = Mathf.Abs(node1.CurrentTile.y - node2.CurrentTile.y);
+        
+        if(distanceX > distanceY)
+            return 14 * distanceY + 10 * (distanceX - distanceY);
+        else
+            return 14 * distanceX + 10 * (distanceY - distanceX);
+    }
+
+    private List<Grid.Tile> GetRetracedPathToTargetNode(PathNode startNode, PathNode currentNode)
     {
         List<Grid.Tile> retracedPath = new List<Grid.Tile>();
-        PathNode currentNode = targetNode;
-
+        
         while (currentNode != startNode)
         {
             retracedPath.Add(currentNode.CurrentTile);
