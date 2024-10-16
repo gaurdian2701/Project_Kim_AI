@@ -11,101 +11,116 @@ public class Kim : CharacterController
 {
     [SerializeField] float ContextRadius;
     [SerializeField] float waitTime;
-    
+
     private Grid gridManager;
     private Random random;
-    private List<Grid.Tile> tilesOnCurrentPath;
     private float currentWaitStep;
-
-    private const int minStepsToBeTaken = 5;
-    private const int maxStepsToBeTaken = 10;
+    
+    private int frameUpdate = 0;
 
     public override void StartCharacter()
     {
         base.StartCharacter();
         gridManager = Grid.Instance;
         random = new Random();
-        tilesOnCurrentPath = new List<Grid.Tile>();
         currentWaitStep = waitTime;
-        myCurrentTile = gridManager.GetClosest(transform.position); 
-    }
-
-    private Vector2Int GenerateRandomDirection()
-    {
-        int direction = random.Next(0, 4);
-        switch (direction)
-        {
-            default:
-            case 0:
-                return new Vector2Int(0, 1);
-            case 1:
-                return new Vector2Int(1, 0);
-            case 2:
-                return new Vector2Int(0, -1);
-            case 3:
-                return new Vector2Int(-1, 0);
-        }
+        myCurrentTile = gridManager.GetClosest(transform.position);
     }
 
     public override void UpdateCharacter()
     {
         base.UpdateCharacter();
         Zombie closest = GetClosest(GetContextByTag("Zombie"))?.GetComponent<Zombie>();
-
-        if (currentWaitStep <= 0f)
-        {
-            random = new Random();
-            tilesOnCurrentPath.Clear();
-            myCurrentTile = gridManager.GetClosest(transform.position);
-            int numberOfStepsToBeTaken = random.Next(minStepsToBeTaken, maxStepsToBeTaken + 1);
-            Vector2Int tileCalculatedForNextStep = new Vector2Int(myCurrentTile.x, myCurrentTile.y);
-            for (int currentStep = 0; currentStep < numberOfStepsToBeTaken; currentStep++)
-            {
-                Vector2Int nextRandomDirection = GenerateRandomDirection();
-                Vector2Int temporaryTileCalculatedForNextStep = tileCalculatedForNextStep;
-                temporaryTileCalculatedForNextStep.x += nextRandomDirection.x;
-                temporaryTileCalculatedForNextStep.y += nextRandomDirection.y;
-                Grid.Tile nextTile = gridManager.TryGetTile(tileCalculatedForNextStep);
-                if (nextTile != null)
-                {
-                    tilesOnCurrentPath.Add(nextTile);
-                    tileCalculatedForNextStep = temporaryTileCalculatedForNextStep;
-                }
-            }
-            SetWalkBuffer(tilesOnCurrentPath);
-            currentWaitStep = waitTime;
-            FindPath();
-        }
-        else
-            currentWaitStep -= Time.deltaTime;
+        
+        FindPathToTarget();
+        frameUpdate++;
     }
 
-    private void FindPath()
+    private void FindPathToTarget()
     {
         List<PathNode> openSet = new List<PathNode>();
-        List<PathNode> closedSet = new List<PathNode>();
-        
+        HashSet<PathNode> closedSet = new HashSet<PathNode>();
+
         PathNode startNode = new PathNode();
-        PathNode currentNode = new PathNode();
         PathNode targetNode = new PathNode();
-        
-        startNode.CurrentTile = myCurrentTile;
+
+        startNode.CurrentTile = gridManager.GetClosest(transform.position);
         startNode.CostToMoveToTile = 0;
-        startNode.HeuristicCost = Vector2.Distance(gridManager.WorldPos(myCurrentTile), gridManager.WorldPos(gridManager.GetFinishTile()));
+        startNode.HeuristicCost = MathF.Round(Vector2.Distance(gridManager.WorldPos(myCurrentTile),
+            gridManager.WorldPos(gridManager.GetFinishTile())), 2);
         openSet.Add(startNode);
+        
+        Debug.Log(openSet[0]);
 
         targetNode.CurrentTile = gridManager.GetFinishTile();
-
-        while (openSet.Count > 0)
+        int listUpdate = 0;
+        while (openSet.Count < 2000 && listUpdate < 60)
         {
-            currentNode = openSet[0];
-            if (currentNode.CurrentTile == targetNode.CurrentTile)
+            listUpdate++;
+            PathNode currentNode = openSet[0];
+            for (int i = 1; i < openSet.Count; i++)
+            {
+                if (openSet[i].TotalCost < currentNode.TotalCost || openSet[i].TotalCost == currentNode.TotalCost)
+                    if(openSet[i].HeuristicCost < currentNode.HeuristicCost)
+                        currentNode = openSet[i];
+            }
+            
+            openSet.Remove(currentNode);
+            closedSet.Add(currentNode);
+
+            if (gridManager.IsSameTile(currentNode.CurrentTile, targetNode.CurrentTile))
+            {
+                SetWalkBuffer(GetRetracedPathToTargetNode(startNode, targetNode));
                 return;
-            List<PathNode> neighbours = GetNeighboursOfNode(currentNode, targetNode);
+            }
+
+            List<PathNode> neighbours = GetNeighboursOfNode(currentNode);
+            
+            for (int i = 0; i < neighbours.Count; i++)
+            {
+                if (closedSet.Contains(neighbours[i]) || neighbours[i].CurrentTile.occupied)
+                {
+                    Debug.Log("Contains for closed set working");
+                    continue;
+                }
+                
+                float newMovementCostToNode = MathF.Round(currentNode.CostToMoveToTile + Vector2.Distance(gridManager.WorldPos(currentNode.CurrentTile), 
+                    gridManager.WorldPos(neighbours[i].CurrentTile)), 2);
+                if (newMovementCostToNode < neighbours[i].CostToMoveToTile || !openSet.Contains(neighbours[i]))
+                {
+                    neighbours[i].CostToMoveToTile = newMovementCostToNode;
+                    neighbours[i].HeuristicCost = MathF.Round(Vector2.Distance(gridManager.WorldPos(targetNode.CurrentTile),
+                        gridManager.WorldPos(neighbours[i].CurrentTile)), 2);
+                    neighbours[i].ParentNode = currentNode;
+
+                    if (!openSet.Contains(neighbours[i]))
+                    {
+                        openSet.Add(neighbours[i]);
+                        GameObject c = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                        c.transform.position = gridManager.WorldPos(neighbours[i].CurrentTile);
+                        c.transform.localScale = new Vector3(0.2f, 0.2f, 0.2f);
+                        Debug.Log(gridManager.WorldPos(neighbours[i].CurrentTile).magnitude + " " + frameUpdate);
+                    }
+                }
+            }
         }
     }
 
-    private List<PathNode> GetNeighboursOfNode(PathNode centerNode, PathNode targetNode)
+    private List<Grid.Tile> GetRetracedPathToTargetNode(PathNode startNode, PathNode targetNode)
+    {
+        List<Grid.Tile> retracedPath = new List<Grid.Tile>();
+        PathNode currentNode = targetNode;
+
+        while (currentNode != startNode)
+        {
+            retracedPath.Add(currentNode.CurrentTile);
+            currentNode = currentNode.ParentNode;
+        }
+        retracedPath.Reverse();
+        return retracedPath;
+    }
+
+    private List<PathNode> GetNeighboursOfNode(PathNode centerNode)
     {
         List<PathNode> neighbours = new List<PathNode>();
         for (int i = -1; i <= 1; i++)
@@ -114,25 +129,17 @@ public class Kim : CharacterController
             {
                 if (i == 0 && j == 0)
                     continue;
-                
+
                 Vector2Int tilePosition = new Vector2Int(centerNode.CurrentTile.x + i, centerNode.CurrentTile.y + j);
                 Grid.Tile tileCorrespondingToNeighbour = gridManager.TryGetTile(tilePosition);
                 if (tileCorrespondingToNeighbour != null)
                 {
                     PathNode neighbour = new PathNode();
                     neighbour.CurrentTile = tileCorrespondingToNeighbour;
-                    neighbour.CostToMoveToTile = MathF.Round(Vector2.Distance(gridManager.WorldPos(centerNode.CurrentTile), 
-                        gridManager.WorldPos(tileCorrespondingToNeighbour)), 2);
-                    neighbour.HeuristicCost = MathF.Round(Vector2.Distance(gridManager.WorldPos(targetNode.CurrentTile),
-                        gridManager.WorldPos(tileCorrespondingToNeighbour)), 2);
                     neighbours.Add(neighbour);
-                    GameObject c = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                    c.transform.localScale = new Vector3(0.2f, 0.1f, 0.2f);
-                    c.transform.position = gridManager.WorldPos(tileCorrespondingToNeighbour);
                 }
             }
         }
-
         return neighbours;
     }
 
@@ -168,6 +175,7 @@ public class Kim : CharacterController
                 Closest = z;
             }
         }
+
         return Closest;
     }
 }

@@ -6,7 +6,7 @@ using UnityEngine.Serialization;
 public class PathNode
 {
     public Grid.Tile CurrentTile;
-    public Grid.Tile ParentTile;
+    [FormerlySerializedAs("ParentTile")] public PathNode ParentNode;
     public float CostToMoveToTile;
     public float HeuristicCost;
 
