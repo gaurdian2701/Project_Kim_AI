@@ -45,7 +45,7 @@ public class OutroState : State
         if(Vector3.Distance(Grid.Instance.GetWinPos(), GamesManager.Instance.myKim.transform.position) < 1)
         {
             WinUi.SetActive(true);
-            GameTimeText.text = "Total Time : " + GamesManager.Instance.GetTotlatGameTime().ToString("F3");
+            GameTimeText.text = "Total Time : " + GamesManager.Instance.GetTotalGameTime().ToString("F3");
 
             BurgerText.text = GamesManager.Instance.GetCollectedBurgers().ToString() + "/" + GamesManager.Instance.GetBurgerCount().ToString() + "<sprite=0>";
         }

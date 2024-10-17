@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UIElements;
 
 // _     __________    _    ______   __   ____ ___  ____  _____           
@@ -54,8 +55,18 @@ public class Grid : MonoBehaviour
     public class Tile
     {
         public int x, y = 0;
-        public bool occupied = false;
-        public bool finishTile = false;
+        [FormerlySerializedAs("occupied")] public bool Occupied = false;
+        [FormerlySerializedAs("finishTile")] public bool FinishTile = false;
+        [FormerlySerializedAs("isOnPlayerPath")] public bool IsOnPlayerPath = false;
+        public bool IsPartOfZombie = false;
+        public int CostToMoveToTile;
+        public int HeuristicCost;
+        public int TotalCost
+        {
+            get => CostToMoveToTile + HeuristicCost;
+        }
+
+        [FormerlySerializedAs("ParentNode")] public Grid.Tile ParentTile;
     }
 
     public List<Tile> tiles = new List<Tile>();
@@ -73,7 +84,7 @@ public class Grid : MonoBehaviour
                 Tile t = new Tile();
                 t.x = x;
                 t.y = y;
-                t.occupied = false;
+                t.Occupied = false;
 
                 Vector3 cubeSize = new Vector3(Spacing, 0.1f, Spacing);
                 Vector3 cubePos = new Vector3();
@@ -90,7 +101,7 @@ public class Grid : MonoBehaviour
                     {
                         if (c.transform.CompareTag("Obstacle"))
                         {
-                            t.occupied = true;
+                            t.Occupied = true;
                             break;
                         }
                     }
@@ -100,7 +111,7 @@ public class Grid : MonoBehaviour
             }
         }
 
-        GetClosest(FinishTileTrans.position).finishTile = true;
+        GetClosest(FinishTileTrans.position).FinishTile = true;
         GeneratedGrid = true;
     }
 
@@ -114,7 +125,7 @@ public class Grid : MonoBehaviour
         foreach (Tile t in tiles)
         {
             float curDist = Vector3.Distance(aPosition, WorldPos(t));
-            if (curDist < dist && !t.occupied && !IsSameTile(t, aTile))
+            if (curDist < dist && !t.Occupied && !IsSameTile(t, aTile))
             {
                 dist = curDist;
                 returnTile = t;
@@ -143,7 +154,7 @@ public class Grid : MonoBehaviour
     {
         foreach (Tile t in tiles)
         {
-            if (t.finishTile) return t;
+            if (t.FinishTile) return t;
         }
 
         return null;
@@ -161,7 +172,7 @@ public class Grid : MonoBehaviour
         foreach (Tile t in tiles)
         {
             float curDist = Vector3.Distance(aPosition, WorldPos(t));
-            if (curDist < dist && !t.occupied)
+            if (curDist < dist && !t.Occupied)
             {
                 dist = curDist;
                 returnTile = t;
@@ -183,8 +194,10 @@ public class Grid : MonoBehaviour
         {
             foreach (Tile t in tiles)
             {
-                if (t.occupied) Gizmos.color = Color.red; else Gizmos.color = Color.green;
-                if (t.finishTile) Gizmos.color = Color.blue;
+                if (t.Occupied) Gizmos.color = Color.red; else Gizmos.color = Color.green;
+                if (t.FinishTile) Gizmos.color = Color.blue;
+                if(t.IsOnPlayerPath) Gizmos.color = Color.magenta;
+                if(t.IsPartOfZombie) Gizmos.color = Color.yellow;
 
                 AlphaColor();
                 Vector3 cubeSize = new Vector3(Spacing * VisualTileSize, 0.1f, Spacing * VisualTileSize);

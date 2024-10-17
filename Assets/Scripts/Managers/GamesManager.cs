@@ -1,6 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public class GamesManager : StateMachine
 {
@@ -23,6 +26,7 @@ public class GamesManager : StateMachine
     #endregion
 
     public GameObject myKim;
+    private Kim myKimScript;
 
     float TotalGameTime;
 
@@ -31,6 +35,8 @@ public class GamesManager : StateMachine
 
     [SerializeField] bool SkipIntro = false;
     [SerializeField] private float currentTimeStep;
+    
+    [FormerlySerializedAs("Burgers")] public List<Burger> BurgersInScene = new List<Burger>();
 
     private void Awake()
     {
@@ -41,7 +47,9 @@ public class GamesManager : StateMachine
     private void Start()
     {
         InitializeStateMachine();
-        BurgerCount = FindObjectsOfType<Burger>().Length;
+        BurgersInScene = FindObjectsOfType<Burger>().ToList();
+        BurgerCount = BurgersInScene.Count;
+        myKimScript = myKim.GetComponent<Kim>();
         if (!SkipIntro)
         {
             ChangeState<IntroState>();
@@ -67,7 +75,7 @@ public class GamesManager : StateMachine
     {
         TotalGameTime = aTime;
     }
-    public float GetTotlatGameTime()
+    public float GetTotalGameTime()
     {
         return TotalGameTime;
     }
@@ -75,6 +83,13 @@ public class GamesManager : StateMachine
     public void CollectBurger()
     {
         CollectedBurgers++;
+        InitiateActionsAfterBurgerCollection();
+    }
+
+    private async void InitiateActionsAfterBurgerCollection()
+    {
+        await Task.Delay(1000);
+        myKimScript.OnBurgerCollected();
     }
 
     public int GetBurgerCount()

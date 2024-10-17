@@ -13,6 +13,9 @@ public class Kim : CharacterController
     [SerializeField] float waitTime;
 
     private Grid gridManager;
+    private bool calculatePath = true;
+    private List<Grid.Tile> tilesAroundZombie = new List<Grid.Tile>();
+    private Zombie closestZombie;
 
     public override void StartCharacter()
     {
@@ -24,96 +27,166 @@ public class Kim : CharacterController
     public override void UpdateCharacter()
     {
         base.UpdateCharacter();
-        Zombie closest = GetClosest(GetContextByTag("Zombie"))?.GetComponent<Zombie>();
+        closestZombie = GetClosest(GetContextByTag("Zombie"))?.GetComponent<Zombie>();
         
-        FindPathToTarget();
+        if(closestZombie != null)
+            GetTileCostsAroundZombie(closestZombie);
+        else
+            ClearZombieData();
+        
+        if(calculatePath)
+            FindPathToTarget(GetNextTarget());
     }
 
-    private void FindPathToTarget()
+    private void GetTileCostsAroundZombie(Zombie closestZombie)
     {
-        List<PathNode> openSet = new List<PathNode>();
-        List<PathNode> closedSet = new List<PathNode>();
+        Grid.Tile centerTile = gridManager.GetClosest(closestZombie.transform.position);
+        tilesAroundZombie.Add(centerTile);
+        centerTile.IsPartOfZombie = true;
+        tilesAroundZombie.AddRange(GetNeighbourTilesOfZombie(centerTile));
+        foreach (Grid.Tile t in tilesAroundZombie)
+        {
+            t.CostToMoveToTile = int.MaxValue;
+            t.IsPartOfZombie = true;
+        }
+        calculatePath = true;
+    }
 
-        PathNode startNode = new PathNode();
-        PathNode targetNode = new PathNode();
+    private List<Grid.Tile> GetNeighbourTilesOfZombie(Grid.Tile centerTile)
+    {
+        ClearZombieData();
+        List<Grid.Tile> neighbourTiles = new List<Grid.Tile>();
+        for (int i = -3; i < 3; i++)
+        {
+            for (int j = -3; j < 3; j++)
+            {
+                if (i == 0 && j == 0)
+                    continue;
 
-        startNode.CurrentTile = gridManager.GetClosest(transform.position);
-        targetNode.CurrentTile = gridManager.GetFinishTile();
-        startNode.CostToMoveToTile = 0;
-        startNode.HeuristicCost = MathF.Round(Vector2.Distance(gridManager.WorldPos(myCurrentTile),
-            gridManager.WorldPos(targetNode.CurrentTile)), 2);
-        openSet.Add(startNode);
+                Grid.Tile tileReturned = gridManager.TryGetTile(new Vector2Int(centerTile.x + i, centerTile.y + j));
+                if(tileReturned != null)
+                    neighbourTiles.Add(tileReturned);
+            }
+        }
+        return neighbourTiles;
+    }
+
+
+    private void ClearZombieData()
+    {
+        foreach (Grid.Tile t in tilesAroundZombie)
+        {
+            if (t == null)
+                continue;
+                
+            t.CostToMoveToTile = 0;
+            t.IsPartOfZombie = false;
+        }
+        tilesAroundZombie.Clear();
+    }
+
+    private void FindPathToTarget(Grid.Tile targetTile)
+    {
+        List<Grid.Tile> openSet = new List<Grid.Tile>();
+        HashSet<Grid.Tile> closedSet = new HashSet<Grid.Tile>();
+
+        if (TileNotReachable(targetTile))
+        {
+            FindPathToTarget(gridManager.GetClosest(transform.position - closestZombie.transform.position));
+            return;
+        }
+        
+        Grid.Tile startTile = gridManager.GetClosest(transform.position);
+        
+        startTile.CostToMoveToTile = 0;
+        startTile.HeuristicCost = GetDistanceBetweenTiles(startTile, targetTile);
+        openSet.Add(startTile);
             
         while (openSet.Count > 0)
         {
-            PathNode currentNode = openSet[0];
+            Grid.Tile currentTile = openSet[0];
             for (int i = 1; i < openSet.Count; i++)
             {
-                if (openSet[i].TotalCost < currentNode.TotalCost || openSet[i].TotalCost == currentNode.TotalCost)
-                    if(openSet[i].HeuristicCost < currentNode.HeuristicCost)
-                        currentNode = openSet[i];
+                if (openSet[i].TotalCost < currentTile.TotalCost || openSet[i].TotalCost == currentTile.TotalCost)
+                    if(openSet[i].HeuristicCost < currentTile.HeuristicCost)
+                        currentTile = openSet[i];
             }
             
-            openSet.Remove(currentNode);
-            
-            if(closedSet.Find(x => x.CurrentTile == currentNode.CurrentTile) == null)
-                closedSet.Add(currentNode);
+            currentTile.IsOnPlayerPath = true;
+            openSet.Remove(currentTile);
+            closedSet.Add(currentTile);
 
-            if (gridManager.IsSameTile(currentNode.CurrentTile, targetNode.CurrentTile))
+            if (gridManager.IsSameTile(currentTile, targetTile))
             {
-                SetWalkBuffer(GetRetracedPathToTargetNode(startNode, currentNode));
+                SetWalkBuffer(GetRetracedPathToTargetTile(startTile, targetTile));
+                calculatePath = false;
                 return;
             }
 
-            List<PathNode> neighbours = GetNeighboursOfNode(currentNode);
+            List<Grid.Tile> neighbours = GetNeighboursOfTile(currentTile);
             
             for (int i = 0; i < neighbours.Count; i++)
             {
-                if (closedSet.Find(x => x.CurrentTile == neighbours[i].CurrentTile) != null || neighbours[i].CurrentTile.occupied)
+                if (closedSet.Contains(neighbours[i]) || neighbours[i].Occupied || tilesAroundZombie.Contains(neighbours[i]))
                     continue;
                 
-                float newMovementCostToNode = GetDistanceBetweenNodes(currentNode, neighbours[i]);
+                int newMovementCostToNode = GetDistanceBetweenTiles(currentTile, neighbours[i]);
                 
-                if (newMovementCostToNode < neighbours[i].CostToMoveToTile || openSet.Find(x => x.CurrentTile == neighbours[i].CurrentTile) == null)
+                if (newMovementCostToNode < neighbours[i].CostToMoveToTile || !openSet.Contains(neighbours[i]))
                 {
                     neighbours[i].CostToMoveToTile = newMovementCostToNode;
-                    neighbours[i].HeuristicCost = GetDistanceBetweenNodes(targetNode, neighbours[i]);
-                    neighbours[i].ParentNode = currentNode;
+                    neighbours[i].HeuristicCost = GetDistanceBetweenTiles(targetTile, neighbours[i]);
+                    neighbours[i].ParentTile = currentTile;
                     
-                    if (openSet.Find(x => x.CurrentTile == neighbours[i].CurrentTile) == null)
+                    if (!openSet.Contains(neighbours[i]))
                         openSet.Add(neighbours[i]);
                 }
             }
         }
     }
 
-    private int GetDistanceBetweenNodes(PathNode node1, PathNode node2)
+    private bool TileNotReachable(Grid.Tile tile) => tile.IsPartOfZombie;
+
+    private Grid.Tile GetNextTarget()
     {
-        int distanceX = Mathf.Abs(node1.CurrentTile.x - node2.CurrentTile.x);
-        int distanceY = Mathf.Abs(node1.CurrentTile.y - node2.CurrentTile.y);
+        if (GamesManager.Instance.GetCollectedBurgers() == GamesManager.Instance.GetBurgerCount())
+            return gridManager.GetFinishTile();
+
+        foreach (Grid.Tile tile in gridManager.tiles)
+            tile.IsOnPlayerPath = false;
+        
+        return gridManager.GetClosest(GamesManager.Instance.BurgersInScene[GamesManager.Instance.GetCollectedBurgers()].transform.position);
+    }
+
+    public void OnBurgerCollected() => calculatePath = true;
+
+    private int GetDistanceBetweenTiles(Grid.Tile tile1, Grid.Tile tile2)
+    {
+        int distanceX = Mathf.Abs(tile1.x - tile2.x);
+        int distanceY = Mathf.Abs(tile1.y - tile2.y);
         
         if(distanceX > distanceY)
             return 14 * distanceY + 10 * (distanceX - distanceY);
-        else
-            return 14 * distanceX + 10 * (distanceY - distanceX);
+        
+        return 14 * distanceX + 10 * (distanceY - distanceX);
     }
 
-    private List<Grid.Tile> GetRetracedPathToTargetNode(PathNode startNode, PathNode currentNode)
+    private List<Grid.Tile> GetRetracedPathToTargetTile(Grid.Tile startTile, Grid.Tile currentTile)
     {
         List<Grid.Tile> retracedPath = new List<Grid.Tile>();
         
-        while (currentNode != startNode)
+        while (currentTile != startTile)
         {
-            retracedPath.Add(currentNode.CurrentTile);
-            currentNode = currentNode.ParentNode;
+            retracedPath.Add(currentTile);
+            currentTile = currentTile.ParentTile;
         }
         retracedPath.Reverse();
         return retracedPath;
     }
 
-    private List<PathNode> GetNeighboursOfNode(PathNode centerNode)
+    private List<Grid.Tile> GetNeighboursOfTile(Grid.Tile centerNode)
     {
-        List<PathNode> neighbours = new List<PathNode>();
+        List<Grid.Tile> neighbours = new List<Grid.Tile>();
         for (int i = -1; i <= 1; i++)
         {
             for (int j = -1; j <= 1; j++)
@@ -121,14 +194,10 @@ public class Kim : CharacterController
                 if (i == 0 && j == 0)
                     continue;
 
-                Vector2Int tilePosition = new Vector2Int(centerNode.CurrentTile.x + i, centerNode.CurrentTile.y + j);
+                Vector2Int tilePosition = new Vector2Int(centerNode.x + i, centerNode.y + j);
                 Grid.Tile tileCorrespondingToNeighbour = gridManager.TryGetTile(tilePosition);
                 if (tileCorrespondingToNeighbour != null)
-                {
-                    PathNode neighbour = new PathNode();
-                    neighbour.CurrentTile = tileCorrespondingToNeighbour;
-                    neighbours.Add(neighbour);
-                }
+                    neighbours.Add(tileCorrespondingToNeighbour);
             }
         }
         return neighbours;

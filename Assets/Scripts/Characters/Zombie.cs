@@ -72,7 +72,7 @@ public class Zombie : CharacterController
                 myCurrentTile.y + (stepTakenInADirection.y * offsetToNextTile)));
             if (nextTileCalculated != null)
             {
-                if (!nextTileCalculated.occupied)
+                if (!nextTileCalculated.Occupied)
                 {
                     pathOfTilesTaken.Add(nextTileCalculated);
                 }
