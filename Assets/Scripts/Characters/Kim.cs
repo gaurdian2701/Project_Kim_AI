@@ -28,11 +28,17 @@ public class Kim : CharacterController
     {
         base.UpdateCharacter();
         closestZombie = GetClosest(GetContextByTag("Zombie"))?.GetComponent<Zombie>();
-        
-        if(closestZombie != null)
+
+        if (closestZombie != null)
+        {
             GetTileCostsAroundZombie(closestZombie);
+            calculatePath = true;
+        }
         else
+        {
             ClearZombieData();
+            calculatePath = true;
+        }
         
         if(calculatePath)
             FindPathToTarget(GetNextTarget());
@@ -49,7 +55,6 @@ public class Kim : CharacterController
             t.CostToMoveToTile = int.MaxValue;
             t.IsPartOfZombie = true;
         }
-        calculatePath = true;
     }
 
     private List<Grid.Tile> GetNeighbourTilesOfZombie(Grid.Tile centerTile)
@@ -92,6 +97,12 @@ public class Kim : CharacterController
 
         if (TileNotReachable(targetTile))
         {
+            if (Vector3.Distance(transform.position, closestZombie.transform.position) > ContextRadius)
+            {
+                myWalkBuffer.Clear();
+                return;
+            }
+            
             FindPathToTarget(gridManager.GetClosest(transform.position - closestZombie.transform.position));
             return;
         }
