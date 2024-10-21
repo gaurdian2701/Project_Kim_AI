@@ -8,11 +8,8 @@ public class RootNode : Node
     {
     }
 
-    public virtual void Evaluate()
+    public override NodeStates Evaluate()
     {
-        foreach (Node child in children)
-        {
-            child.Evaluate();
-        }
+        return children[0].Evaluate();
     }
 }
