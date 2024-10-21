@@ -44,7 +44,7 @@ public class Kim : CharacterController
                 FindPathToTarget(gridManager.GetClosest(transform.position - closestZombie.transform.position));
                 calculatePath = false;
                 return;
-            } //Do this part in CheckForClosestZombie in behaviour tree
+            } 
 
             calculatePath = true;
         }
@@ -105,6 +105,8 @@ public class Kim : CharacterController
 
         tilesAroundZombie.Clear();
     }
+    
+    public void ClearWalkBuffer() => myWalkBuffer.Clear();
 
     private void FindPathToTarget(Grid.Tile targetTile)
     {
@@ -160,10 +162,10 @@ public class Kim : CharacterController
             }
         }
     }
-
     private bool TileNotReachable(Grid.Tile tile) => tile.IsPartOfZombie;
 
-    private Grid.Tile GetNextTarget()
+
+    public Grid.Tile GetNextTarget()
     {
         if (GamesManager.Instance.GetCollectedBurgers() == GamesManager.Instance.GetBurgerCount())
             return gridManager.GetFinishTile();
@@ -227,7 +229,7 @@ public class Kim : CharacterController
         return Grid.Instance.WorldPos(Grid.Instance.GetFinishTile());
     }
 
-    GameObject[] GetContextByTag(string aTag)
+    public GameObject[] GetContextByTag(string aTag)
     {
         Collider[] context = Physics.OverlapSphere(transform.position, ContextRadius);
         List<GameObject> returnContext = new List<GameObject>();
@@ -242,7 +244,7 @@ public class Kim : CharacterController
         return returnContext.ToArray();
     }
 
-    GameObject GetClosest(GameObject[] aContext)
+    public GameObject GetClosest(GameObject[] aContext)
     {
         float dist = float.MaxValue;
         GameObject Closest = null;

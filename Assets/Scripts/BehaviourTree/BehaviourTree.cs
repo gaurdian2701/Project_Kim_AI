@@ -10,4 +10,8 @@ public class BehaviourTree : MonoBehaviour
     protected virtual void FillBlackboard()
     {
     }
+
+    protected virtual void FillTree()
+    {
+    }
 }
