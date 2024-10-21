@@ -9,8 +9,7 @@ using Random = System.Random;
 
 public class Kim : CharacterController
 {
-    [SerializeField] float ContextRadius;
-    [SerializeField] float waitTime;
+    public float ContextRadius;
 
     private Grid gridManager;
     private bool calculatePath = true;
@@ -32,6 +31,21 @@ public class Kim : CharacterController
         if (closestZombie != null)
         {
             GetTileCostsAroundZombie(closestZombie);
+
+            if (TileNotReachable(GetNextTarget()))
+            {
+                if (Vector3.Distance(transform.position, closestZombie.transform.position) > ContextRadius)
+                {
+                    myWalkBuffer.Clear();
+                    calculatePath = false;
+                    return;
+                }
+
+                FindPathToTarget(gridManager.GetClosest(transform.position - closestZombie.transform.position));
+                calculatePath = false;
+                return;
+            } //Do this part in CheckForClosestZombie in behaviour tree
+
             calculatePath = true;
         }
         else
@@ -39,8 +53,8 @@ public class Kim : CharacterController
             ClearZombieData();
             calculatePath = true;
         }
-        
-        if(calculatePath)
+
+        if (calculatePath)
             FindPathToTarget(GetNextTarget());
     }
 
@@ -69,10 +83,11 @@ public class Kim : CharacterController
                     continue;
 
                 Grid.Tile tileReturned = gridManager.TryGetTile(new Vector2Int(centerTile.x + i, centerTile.y + j));
-                if(tileReturned != null)
+                if (tileReturned != null)
                     neighbourTiles.Add(tileReturned);
             }
         }
+
         return neighbourTiles;
     }
 
@@ -83,10 +98,11 @@ public class Kim : CharacterController
         {
             if (t == null)
                 continue;
-                
+
             t.CostToMoveToTile = 0;
             t.IsPartOfZombie = false;
         }
+
         tilesAroundZombie.Clear();
     }
 
@@ -95,34 +111,22 @@ public class Kim : CharacterController
         List<Grid.Tile> openSet = new List<Grid.Tile>();
         HashSet<Grid.Tile> closedSet = new HashSet<Grid.Tile>();
 
-        if (TileNotReachable(targetTile))
-        {
-            if (Vector3.Distance(transform.position, closestZombie.transform.position) > ContextRadius)
-            {
-                myWalkBuffer.Clear();
-                return;
-            }
-            
-            FindPathToTarget(gridManager.GetClosest(transform.position - closestZombie.transform.position));
-            return;
-        }
-        
         Grid.Tile startTile = gridManager.GetClosest(transform.position);
-        
+
         startTile.CostToMoveToTile = 0;
         startTile.HeuristicCost = GetDistanceBetweenTiles(startTile, targetTile);
         openSet.Add(startTile);
-            
+
         while (openSet.Count > 0)
         {
             Grid.Tile currentTile = openSet[0];
             for (int i = 1; i < openSet.Count; i++)
             {
                 if (openSet[i].TotalCost < currentTile.TotalCost || openSet[i].TotalCost == currentTile.TotalCost)
-                    if(openSet[i].HeuristicCost < currentTile.HeuristicCost)
+                    if (openSet[i].HeuristicCost < currentTile.HeuristicCost)
                         currentTile = openSet[i];
             }
-            
+
             currentTile.IsOnPlayerPath = true;
             openSet.Remove(currentTile);
             closedSet.Add(currentTile);
@@ -135,20 +139,21 @@ public class Kim : CharacterController
             }
 
             List<Grid.Tile> neighbours = GetNeighboursOfTile(currentTile);
-            
+
             for (int i = 0; i < neighbours.Count; i++)
             {
-                if (closedSet.Contains(neighbours[i]) || neighbours[i].Occupied || tilesAroundZombie.Contains(neighbours[i]))
+                if (closedSet.Contains(neighbours[i]) || neighbours[i].Occupied ||
+                    tilesAroundZombie.Contains(neighbours[i]))
                     continue;
-                
+
                 int newMovementCostToNode = GetDistanceBetweenTiles(currentTile, neighbours[i]);
-                
+
                 if (newMovementCostToNode < neighbours[i].CostToMoveToTile || !openSet.Contains(neighbours[i]))
                 {
                     neighbours[i].CostToMoveToTile = newMovementCostToNode;
                     neighbours[i].HeuristicCost = GetDistanceBetweenTiles(targetTile, neighbours[i]);
                     neighbours[i].ParentTile = currentTile;
-                    
+
                     if (!openSet.Contains(neighbours[i]))
                         openSet.Add(neighbours[i]);
                 }
@@ -165,8 +170,9 @@ public class Kim : CharacterController
 
         foreach (Grid.Tile tile in gridManager.tiles)
             tile.IsOnPlayerPath = false;
-        
-        return gridManager.GetClosest(GamesManager.Instance.BurgersInScene[GamesManager.Instance.GetCollectedBurgers()].transform.position);
+
+        return gridManager.GetClosest(GamesManager.Instance.BurgersInScene[GamesManager.Instance.GetCollectedBurgers()]
+            .transform.position);
     }
 
     public void OnBurgerCollected() => calculatePath = true;
@@ -175,22 +181,23 @@ public class Kim : CharacterController
     {
         int distanceX = Mathf.Abs(tile1.x - tile2.x);
         int distanceY = Mathf.Abs(tile1.y - tile2.y);
-        
-        if(distanceX > distanceY)
+
+        if (distanceX > distanceY)
             return 14 * distanceY + 10 * (distanceX - distanceY);
-        
+
         return 14 * distanceX + 10 * (distanceY - distanceX);
     }
 
     private List<Grid.Tile> GetRetracedPathToTargetTile(Grid.Tile startTile, Grid.Tile currentTile)
     {
         List<Grid.Tile> retracedPath = new List<Grid.Tile>();
-        
+
         while (currentTile != startTile)
         {
             retracedPath.Add(currentTile);
             currentTile = currentTile.ParentTile;
         }
+
         retracedPath.Reverse();
         return retracedPath;
     }
@@ -211,6 +218,7 @@ public class Kim : CharacterController
                     neighbours.Add(tileCorrespondingToNeighbour);
             }
         }
+
         return neighbours;
     }
 
@@ -230,6 +238,7 @@ public class Kim : CharacterController
                 returnContext.Add(c.gameObject);
             }
         }
+
         return returnContext.ToArray();
     }
 
