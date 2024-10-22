@@ -10,7 +10,9 @@ using Random = System.Random;
 public class Kim : CharacterController
 {
     public float ContextRadius;
-
+    public bool BurgerCollected = false;
+    
+    private KimBehaviourTree kimTree;
     private Grid gridManager;
     private bool calculatePath = true;
     private List<Grid.Tile> tilesAroundZombie = new List<Grid.Tile>();
@@ -20,42 +22,44 @@ public class Kim : CharacterController
     {
         base.StartCharacter();
         gridManager = Grid.Instance;
+        kimTree = new KimBehaviourTree(this);
         myCurrentTile = gridManager.GetClosest(transform.position);
     }
 
     public override void UpdateCharacter()
     {
         base.UpdateCharacter();
-        closestZombie = GetClosest(GetContextByTag("Zombie"))?.GetComponent<Zombie>();
-
-        if (closestZombie != null)
-        {
-            GetTileCostsAroundZombie(closestZombie);
-
-            if (TileNotReachable(GetNextTarget()))
-            {
-                if (Vector3.Distance(transform.position, closestZombie.transform.position) > ContextRadius)
-                {
-                    myWalkBuffer.Clear();
-                    calculatePath = false;
-                    return;
-                }
-
-                FindPathToTarget(gridManager.GetClosest(transform.position - closestZombie.transform.position));
-                calculatePath = false;
-                return;
-            } 
-
-            calculatePath = true;
-        }
-        else
-        {
-            ClearZombieData();
-            calculatePath = true;
-        }
-
-        if (calculatePath)
-            FindPathToTarget(GetNextTarget());
+        kimTree.Update();
+        // closestZombie = GetClosest(GetContextByTag("Zombie"))?.GetComponent<Zombie>();
+        //
+        // if (closestZombie != null)
+        // {
+        //     GetTileCostsAroundZombie(closestZombie);
+        //
+        //     if (TileNotReachable(GetNextTarget()))
+        //     {
+        //         if (Vector3.Distance(transform.position, closestZombie.transform.position) > ContextRadius)
+        //         {
+        //             myWalkBuffer.Clear();
+        //             calculatePath = false;
+        //             return;
+        //         }
+        //
+        //         FindPathToTarget(gridManager.GetClosest(transform.position - closestZombie.transform.position));
+        //         calculatePath = false;
+        //         return;
+        //     } 
+        //
+        //     calculatePath = true;
+        // }
+        // else
+        // {
+        //     ClearZombieData();
+        //     calculatePath = true;
+        // }
+        //
+        // if (calculatePath)
+        //     FindPathToTarget(GetNextTarget());
     }
 
     private void GetTileCostsAroundZombie(Zombie closestZombie)
@@ -110,6 +114,7 @@ public class Kim : CharacterController
 
     private void FindPathToTarget(Grid.Tile targetTile)
     {
+        targetTile.IsTargetTile = true;
         List<Grid.Tile> openSet = new List<Grid.Tile>();
         HashSet<Grid.Tile> closedSet = new HashSet<Grid.Tile>();
 
@@ -177,7 +182,11 @@ public class Kim : CharacterController
             .transform.position);
     }
 
-    public void OnBurgerCollected() => calculatePath = true;
+    public void OnBurgerCollected()
+    {
+        BurgerCollected = true;
+        calculatePath = true;
+    }
 
     private int GetDistanceBetweenTiles(Grid.Tile tile1, Grid.Tile tile2)
     {

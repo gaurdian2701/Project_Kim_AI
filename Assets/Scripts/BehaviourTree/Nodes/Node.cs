@@ -11,6 +11,12 @@ public class Node
         this.children = children;
         myBlackboard = blackboard;
     }
+
+    public Node(Node child, Dictionary<string, object> blackboard)
+    {
+        children = new List<Node>{ child };
+        myBlackboard = blackboard;
+    }
     
     public virtual NodeStates Evaluate() => NodeStates.FAILURE;
 }

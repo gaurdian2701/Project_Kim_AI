@@ -2,39 +2,37 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class DetectZombiesNode : Node
+public class CheckForZombiesOnPathNode : Node
 {
     private Kim kimScript;
     private List<Grid.Tile> tilesAroundZombie;
     
-    public DetectZombiesNode(List<Node> children, Dictionary<string, object> blackboard) : base(children,
+    public CheckForZombiesOnPathNode(List<Node> children, Dictionary<string, object> blackboard) : base(children,
         blackboard)
     {
-        kimScript = (Kim)blackboard["KimScript"];
+        kimScript = blackboard["KimScript"] as Kim;
         tilesAroundZombie = blackboard["TilesAroundZombie"] as List<Grid.Tile>;
     }
 
     public override NodeStates Evaluate()
     {
         Zombie closestZombie = kimScript.GetClosest(kimScript.GetContextByTag("Zombie"))?.GetComponent<Zombie>();
+        myBlackboard["PlayerIsWaitingForOpening"] = false;
 
         if (closestZombie != null)
         {
+            Debug.Log("ZOMBIE FOUND");
             GetTileCostsAroundZombie(closestZombie);
-
-            if (kimScript.GetNextTarget().IsPartOfZombie)
-            {
-                if (Vector3.Distance(kimScript.gameObject.transform.position, closestZombie.transform.position) >
-                    (float)myBlackboard["ContextRadius"])
-                {
-                    kimScript.ClearWalkBuffer();
-                    return NodeStates.FAILURE;
-                }
-            }
-            
+            myBlackboard["ClosestZombie"] = closestZombie;
+            myBlackboard["CalculatePath"] = true;
             return NodeStates.SUCCESS;
         }
+        ClearZombieData();
 
+        if ((bool)myBlackboard["PlayerIsWaitingForOpening"])
+            myBlackboard["CalculatePath"] = true;
+        
+        myBlackboard["ClosestZombie"] = null;
         return NodeStates.FAILURE;
     }
     
@@ -50,7 +48,7 @@ public class DetectZombiesNode : Node
             t.IsPartOfZombie = true;
         }
     }
-    
+
     private List<Grid.Tile> GetNeighbourTilesOfZombie(Grid.Tile centerTile)
     {
         ClearZombieData();
@@ -67,12 +65,12 @@ public class DetectZombiesNode : Node
                     neighbourTiles.Add(tileReturned);
             }
         }
-
         return neighbourTiles;
     }
     
     private void ClearZombieData()
     {
+        List<Grid.Tile> tilesAroundZombie = myBlackboard["TilesAroundZombie"] as List<Grid.Tile>;
         foreach (Grid.Tile t in tilesAroundZombie)
         {
             if (t == null)

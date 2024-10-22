@@ -90,7 +90,7 @@ public class PlayingState : State
         {
             if (b.isActiveAndEnabled)
             {
-                if (Vector3.Distance(b.transform.position, Kim.transform.position) < 1)
+                if (Vector3.Distance(b.transform.position, Kim.transform.position) < 0.5f)
                 {
                     GamesManager.Instance.CollectBurger();
                     b.gameObject.SetActive(false);

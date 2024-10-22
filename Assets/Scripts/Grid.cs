@@ -58,6 +58,7 @@ public class Grid : MonoBehaviour
         [FormerlySerializedAs("occupied")] public bool Occupied = false;
         [FormerlySerializedAs("finishTile")] public bool FinishTile = false;
         [FormerlySerializedAs("isOnPlayerPath")] public bool IsOnPlayerPath = false;
+        [FormerlySerializedAs("TargetTile")] public bool IsTargetTile = false;
         public bool IsPartOfZombie = false;
         public int CostToMoveToTile;
         public int HeuristicCost;
@@ -195,9 +196,9 @@ public class Grid : MonoBehaviour
             foreach (Tile t in tiles)
             {
                 if (t.Occupied) Gizmos.color = Color.red; else Gizmos.color = Color.green;
-                if (t.FinishTile) Gizmos.color = Color.blue;
                 if(t.IsOnPlayerPath) Gizmos.color = Color.magenta;
                 if(t.IsPartOfZombie) Gizmos.color = Color.yellow;
+                if(t.IsTargetTile) Gizmos.color = Color.black;
 
                 AlphaColor();
                 Vector3 cubeSize = new Vector3(Spacing * VisualTileSize, 0.1f, Spacing * VisualTileSize);

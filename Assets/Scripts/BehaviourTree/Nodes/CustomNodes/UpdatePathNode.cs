@@ -5,18 +5,30 @@ using UnityEngine;
 public class UpdatePathNode : Node
 {
     private Kim kimScript;
+    private int i;
     
-    public UpdatePathNode(List<Node> children, Dictionary<string, object> blackboard) : base(children,
+    public UpdatePathNode(List<Node> children, Dictionary<string, object> blackboard, int i) : base(children,
         blackboard)
     {
         kimScript = blackboard["KimScript"] as Kim;
+        this.i = i;
     }
 
     public override NodeStates Evaluate() => FindPathToTarget();
 
     private NodeStates FindPathToTarget()
     {
+        if ((bool)myBlackboard["CalculatePath"] == false)
+            return NodeStates.FAILURE;
+        
+        if(i == 1)
+            Debug.Log("FINDING PATH");
+        else
+            Debug.Log("FLEEING");
+        
         Grid.Tile targetTile = myBlackboard["CurrentTargetTile"] as Grid.Tile;
+        
+        targetTile.IsTargetTile = true;
         List<Grid.Tile> openSet = new List<Grid.Tile>();
         HashSet<Grid.Tile> closedSet = new HashSet<Grid.Tile>();
 
@@ -42,7 +54,9 @@ public class UpdatePathNode : Node
 
             if (Grid.Instance.IsSameTile(currentTile, targetTile))
             {
-                kimScript.SetWalkBuffer(GetRetracedPathToTargetTile(startTile, targetTile));
+                if(!(bool)myBlackboard["PlayerIsWaitingForOpening"])
+                    kimScript.SetWalkBuffer(GetRetracedPathToTargetTile(startTile, targetTile));
+                myBlackboard["CalculatePath"] = false;
                 return NodeStates.SUCCESS;
             }
 
@@ -67,7 +81,6 @@ public class UpdatePathNode : Node
                 }
             }
         }
-
         return NodeStates.FAILURE;
     }
     
@@ -113,7 +126,6 @@ public class UpdatePathNode : Node
                     neighbours.Add(tileCorrespondingToNeighbour);
             }
         }
-
         return neighbours;
     }
 }
