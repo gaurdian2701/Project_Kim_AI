@@ -16,7 +16,7 @@ public class WaitForZombieToGoAwayNode : Node
     {
         Debug.Log("WAITING FOR ZOMBIE TO GO AWAY");
         myBlackboard["CalculatePath"] = false;
-        kimScript.ClearWalkBuffer();
+        kimScript.myWalkBuffer.Clear();
         return NodeStates.SUCCESS;
     }
 }

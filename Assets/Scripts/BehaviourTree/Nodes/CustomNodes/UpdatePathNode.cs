@@ -54,6 +54,8 @@ public class UpdatePathNode : Node
 
             if (Grid.Instance.IsSameTile(currentTile, targetTile))
             { 
+                foreach (Grid.Tile tile in kimScript.myWalkBuffer)
+                    tile.IsOnPlayerPath = false;
                 kimScript.SetWalkBuffer(GetRetracedPathToTargetTile(startTile, targetTile));
                 myBlackboard["CalculatePath"] = false;
                 return NodeStates.SUCCESS;

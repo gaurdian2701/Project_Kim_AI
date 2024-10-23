@@ -29,6 +29,7 @@ public class KimBehaviourTree : BehaviourTree
     {
         blackBoard = new Dictionary<string, object>();
         blackBoard.Add("CalculatePath", true);
+        blackBoard.Add("ZombieIsMoving", false);
         blackBoard.Add("ContextRadius", kimScript.ContextRadius);
         blackBoard.Add("TilesAroundZombie", new List<Grid.Tile>());
         blackBoard.Add("ClosestZombie", null);

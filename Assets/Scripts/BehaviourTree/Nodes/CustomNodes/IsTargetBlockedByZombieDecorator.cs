@@ -19,8 +19,9 @@ public class IsTargetBlockedByZombieDecorator : Node
             return children[0].Evaluate();   
         }
         
-        Debug.Log("TARGET NOT BLOCKED BY ZOMBIE");
-        myBlackboard["CalculatePath"] = true;
+        Debug.Log("TARGET NOT BLOCKED BY ZOMBIE"); 
+        
+        // myBlackboard["CalculatePath"] = true;
         return NodeStates.FAILURE;
     }
 }
