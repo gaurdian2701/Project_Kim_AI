@@ -14,14 +14,8 @@ public class IsTargetBlockedByZombieDecorator : Node
     public override NodeStates Evaluate()
     {
         if ((myBlackboard["CurrentTargetTile"] as Grid.Tile).IsPartOfZombie)
-        {
-            Debug.Log("TARGET BLOCKED BY ZOMBIE");
             return children[0].Evaluate();   
-        }
         
-        Debug.Log("TARGET NOT BLOCKED BY ZOMBIE"); 
-        
-        // myBlackboard["CalculatePath"] = true;
         return NodeStates.FAILURE;
     }
 }

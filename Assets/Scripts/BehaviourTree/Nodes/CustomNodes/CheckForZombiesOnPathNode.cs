@@ -20,24 +20,16 @@ public class CheckForZombiesOnPathNode : Node
 
         if (closestZombie != null)
         {
-            Debug.Log("ZOMBIE FOUND");
             GetTileCostsAroundZombie(closestZombie);
             myBlackboard["ClosestZombie"] = closestZombie;
 
             if (ZombieIsOnPlayerPath())
-            {
-                Debug.Log("ZOMBIE IS ON PATH");
                 myBlackboard["CalculatePath"] = true;   
-            }
-            else
-            {
-                Debug.Log("ZOMBIE IS NOT ON PATH");
-            }
+            
             return NodeStates.SUCCESS;
         }
-        Debug.Log("ZOMBIE NOT FOUND");
-        ClearZombieData();
         
+        ClearZombieData();
         myBlackboard["ClosestZombie"] = null;
         return NodeStates.FAILURE;
     }

@@ -14,7 +14,6 @@ public class WaitForZombieToGoAwayNode : Node
 
     public override NodeStates Evaluate()
     {
-        Debug.Log("WAITING FOR ZOMBIE TO GO AWAY");
         myBlackboard["CalculatePath"] = false;
         kimScript.myWalkBuffer.Clear();
         return NodeStates.SUCCESS;

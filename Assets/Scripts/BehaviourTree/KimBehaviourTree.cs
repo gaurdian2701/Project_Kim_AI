@@ -21,7 +21,6 @@ public class KimBehaviourTree : BehaviourTree
     }
     public void Update()
     {
-        Debug.Log(blackBoard["CalculatePath"]);
         rootNode.Evaluate();
     }
     
@@ -39,8 +38,8 @@ public class KimBehaviourTree : BehaviourTree
 
     protected override void FillTree()
     {
-        UpdatePathNode updatePathToNextTarget = new UpdatePathNode(null, blackBoard, 1);
-        UpdatePathNode updatePathToFlee = new UpdatePathNode(null, blackBoard, 2);
+        UpdatePathNode updatePathToNextTarget = new UpdatePathNode(null, blackBoard);
+        UpdatePathNode updatePathToFlee = new UpdatePathNode(null, blackBoard);
         CheckForZombiesOnPathNode checkForZombiesOnPath = new CheckForZombiesOnPathNode(null, blackBoard);
         
         IsZombieTooCloseDecorator isZombieTooClose = new IsZombieTooCloseDecorator(updatePathToFlee, blackBoard);

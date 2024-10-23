@@ -14,14 +14,12 @@ public class IsZombieTooCloseDecorator : Node
     {
         if (Grid.Instance.GetClosest(kimScript.transform.position).IsPartOfZombie)
         {
-            Debug.Log("ZOMBIE TOO CLOSE");
             myBlackboard["CurrentTargetTile"] = Grid.Instance.GetClosest
             (kimScript.transform.position - (myBlackboard["ClosestZombie"] as Zombie).transform.position);
             myBlackboard["CalculatePath"] = true;
             return children[0].Evaluate();
         }
         
-        Debug.Log("ZOMBIE NOT CLOSE");
         myBlackboard["CurrentTargetTile"] = kimScript.GetNextTarget();
         return NodeStates.FAILURE;
     }

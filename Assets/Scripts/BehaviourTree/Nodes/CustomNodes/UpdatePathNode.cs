@@ -5,13 +5,11 @@ using UnityEngine;
 public class UpdatePathNode : Node
 {
     private Kim kimScript;
-    private int i;
     
-    public UpdatePathNode(List<Node> children, Dictionary<string, object> blackboard, int i) : base(children,
+    public UpdatePathNode(List<Node> children, Dictionary<string, object> blackboard) : base(children,
         blackboard)
     {
         kimScript = blackboard["KimScript"] as Kim;
-        this.i = i;
     }
 
     public override NodeStates Evaluate() => FindPathToTarget();
@@ -20,11 +18,6 @@ public class UpdatePathNode : Node
     {
         if ((bool)myBlackboard["CalculatePath"] == false)
             return NodeStates.FAILURE;
-        
-        if(i == 1)
-            Debug.Log("FINDING PATH");
-        else
-            Debug.Log("FLEEING");
         
         Grid.Tile targetTile = myBlackboard["CurrentTargetTile"] as Grid.Tile;
         
