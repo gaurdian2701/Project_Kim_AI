@@ -17,7 +17,6 @@ public class CheckForZombiesOnPathNode : Node
     public override NodeStates Evaluate()
     {
         Zombie closestZombie = kimScript.GetClosest(kimScript.GetContextByTag("Zombie"))?.GetComponent<Zombie>();
-        myBlackboard["PlayerIsWaitingForOpening"] = false;
 
         if (closestZombie != null)
         {
@@ -27,10 +26,8 @@ public class CheckForZombiesOnPathNode : Node
             myBlackboard["CalculatePath"] = true;
             return NodeStates.SUCCESS;
         }
+        Debug.Log("ZOMBIE NOT FOUND");
         ClearZombieData();
-
-        if ((bool)myBlackboard["PlayerIsWaitingForOpening"])
-            myBlackboard["CalculatePath"] = true;
         
         myBlackboard["ClosestZombie"] = null;
         return NodeStates.FAILURE;

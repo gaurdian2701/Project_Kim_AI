@@ -53,9 +53,8 @@ public class UpdatePathNode : Node
             closedSet.Add(currentTile);
 
             if (Grid.Instance.IsSameTile(currentTile, targetTile))
-            {
-                if(!(bool)myBlackboard["PlayerIsWaitingForOpening"])
-                    kimScript.SetWalkBuffer(GetRetracedPathToTargetTile(startTile, targetTile));
+            { 
+                kimScript.SetWalkBuffer(GetRetracedPathToTargetTile(startTile, targetTile));
                 myBlackboard["CalculatePath"] = false;
                 return NodeStates.SUCCESS;
             }

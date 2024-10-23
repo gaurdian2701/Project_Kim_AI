@@ -96,7 +96,7 @@ public class Kim : CharacterController
     }
 
 
-    private void ClearZombieData()
+    private void ClearZombieData()   
     {
         foreach (Grid.Tile t in tilesAroundZombie)
         {

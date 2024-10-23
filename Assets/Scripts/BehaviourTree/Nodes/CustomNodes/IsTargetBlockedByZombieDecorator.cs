@@ -16,13 +16,11 @@ public class IsTargetBlockedByZombieDecorator : Node
         if ((myBlackboard["CurrentTargetTile"] as Grid.Tile).IsPartOfZombie)
         {
             Debug.Log("TARGET BLOCKED BY ZOMBIE");
-            myBlackboard["CalculatePath"] = false;
             return children[0].Evaluate();   
         }
         
         Debug.Log("TARGET NOT BLOCKED BY ZOMBIE");
-        myBlackboard["CurrentTargetTile"] = kimScript.GetNextTarget();
-        myBlackboard["PlayerIsWaitingForOpening"] = false;
+        myBlackboard["CalculatePath"] = true;
         return NodeStates.FAILURE;
     }
 }

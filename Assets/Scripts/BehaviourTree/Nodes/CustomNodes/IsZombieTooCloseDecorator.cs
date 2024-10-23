@@ -12,7 +12,6 @@ public class IsZombieTooCloseDecorator : Node
 
     public override NodeStates Evaluate()
     {
-        myBlackboard["PlayerIsWaitingForOpening"] = false;
         if (Grid.Instance.GetClosest(kimScript.transform.position).IsPartOfZombie)
         {
             Debug.Log("ZOMBIE TOO CLOSE");
@@ -23,6 +22,7 @@ public class IsZombieTooCloseDecorator : Node
         }
         
         Debug.Log("ZOMBIE NOT CLOSE");
+        myBlackboard["CurrentTargetTile"] = kimScript.GetNextTarget();
         return NodeStates.FAILURE;
     }
 }

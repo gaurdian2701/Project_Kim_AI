@@ -34,7 +34,6 @@ public class KimBehaviourTree : BehaviourTree
         blackBoard.Add("ClosestZombie", null);
         blackBoard.Add("KimScript", kimScript);
         blackBoard.Add("CurrentTargetTile", new Grid.Tile());
-        blackBoard.Add("PlayerIsWaitingForOpening", false);
     }
 
     protected override void FillTree()
