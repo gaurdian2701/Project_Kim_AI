@@ -137,18 +137,10 @@ public class Grid : MonoBehaviour
 
     public Tile TryGetTile(Vector2Int aPos)
     {
-        Tile returnTile = null;
-
-        foreach (Tile t in tiles)
-        {
-            if(t.x == aPos.x && t.y == aPos.y)
-            {
-                returnTile = t;
-                break;
-            }
-        }
-
-        return returnTile;
+        if (aPos.x * aPos.y < 0 || aPos.x * aPos.y > Width * Height)
+            return null;
+        
+        return tiles[aPos.x * Height + aPos.y];
     }
 
     public Tile GetFinishTile()
